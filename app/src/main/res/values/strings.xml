@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">SMS Forwarder</string>
+
+    <!-- Main Screen -->
+    <string name="statistics">Statistics:</string>
+    <string name="total_forwarded">Total forwarded:</string>
+    <string name="successful">Successful:</string>
+    <string name="failed">Failed:</string>
+    <string name="current_url">Current URL:</string>
+    <string name="url_not_set">not set</string>
+    <string name="send_test_sms">Send Test SMS</string>
+
+    <!-- Settings Screen -->
+    <string name="settings">Settings</string>
+    <string name="webhook_url">Webhook URL</string>
+    <string name="user_agent">Custom User-Agent (optional)</string>
+    <string name="sim_slot_names">SIM Slot Names</string>
+    <string name="sim_slot_name_template">Name for SIM in Slot #%1$d</string>
+    <string name="save">Save</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="settings_error">Error saving settings</string>
+
+    <!-- Error Log Screen -->
+    <string name="error_log">Error Log</string>
+    <string name="clear_log">Clear Log</string>
+    <string name="no_errors">No errors yet</string>
+
+    <!-- Service & Notifications -->
+    <string name="forwarding_sms">Forwarding SMS…</string>
+    <string name="channel_name">SMS Forwarder Channel</string>
+    <string name="recipient_error">Could not determine recipient phone number from SIM. This is a common Android limitation.</string>
+    <string name="webhook_not_set_error">Webhook URL is not set</string>
+    <string name="server_response_error">Server responded with code %1$d</string>
+    <string name="unknown_connection_error">Unknown connection error</string>
+    <string name="test_slot_name">Test</string>
+    <string name="unknown_slot_name">Unknown</string>
+    <string name="default_slot_name">SLOT #%1$d</string>
+</resources>

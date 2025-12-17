@@ -1,0 +1,23 @@
+# Android Studio / IntelliJ IDEA
+.gradle
+.idea/
+*.iml
+.DS_Store
+/build
+
+# Local configuration
+local.properties
+
+# Keystore files
+*.jks
+*.keystore
+
+# Captures
+captures/
+*.hprof
+
+# Google Services
+/app/google-services.json
+
+# Dependencies
+/app/libs
