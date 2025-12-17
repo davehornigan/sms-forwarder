@@ -32,6 +32,7 @@ class ForwardingService : Service() {
         val body = intent?.getStringExtra("body") ?: ""
         val subscriptionId = intent?.getIntExtra("subscriptionId", -1) ?: -1
         val testRecipient = intent?.getStringExtra("test_recipient")
+        val isTest = intent?.getBooleanExtra("is_test", false) ?: false
 
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, "sms_forwarder_channel")
@@ -48,7 +49,11 @@ class ForwardingService : Service() {
             val recipient = testRecipient ?: subscriptionManager?.let { getRecipientNumber(it, subscriptionInfo) }
             val simSlot = subscriptionInfo?.simSlotIndex
             forwardSms(sender, body, recipient, simSlot, subscriptionId)
-            stopSelf()
+
+            // Under test, do not stop the service, so the notification remains visible.
+            if (!isTest) {
+                stopSelf()
+            }
         }
 
         return START_NOT_STICKY
@@ -88,16 +93,28 @@ class ForwardingService : Service() {
             applicationContext.getString(R.string.recipient_error)
         } else null
 
-        val webhookUrl = sharedPreferences.getString("webhook_url", null)
-        val userAgent = sharedPreferences.getString("user_agent", "")
         val simSlotName = when {
-            subscriptionId == -1 -> applicationContext.getString(R.string.test_slot_name)
             simSlot != null -> {
                 sharedPreferences.getString("sim_slot_name_$simSlot", "")?.takeIf { it.isNotBlank() }
                     ?: applicationContext.getString(R.string.default_slot_name, simSlot + 1)
             }
+            subscriptionId == -1 -> applicationContext.getString(R.string.test_slot_name)
             else -> applicationContext.getString(R.string.unknown_slot_name)
         }
+
+        if (simSlot == null) {
+            val error = "Cannot forward SMS: SIM slot is not identified."
+            sharedPreferences.edit {
+                val currentLogs = sharedPreferences.getStringSet("error_logs", mutableSetOf()) ?: mutableSetOf()
+                val newLogs = currentLogs.toMutableSet()
+                newLogs.add("${System.currentTimeMillis()}|[System] $error")
+                putStringSet("error_logs", newLogs)
+            }
+            return
+        }
+
+        val webhookUrl = sharedPreferences.getString("webhook_url_$simSlot", null)
+        val userAgent = sharedPreferences.getString("user_agent_$simSlot", "")
 
         var success = false
         var networkError: String? = null
@@ -138,18 +155,23 @@ class ForwardingService : Service() {
         }
 
         sharedPreferences.edit {
-            putInt("total_forwarded", sharedPreferences.getInt("total_forwarded", 0) + 1)
+            val statKeySuffix = "_$simSlot"
+            val totalForwardedKey = "total_forwarded$statKeySuffix"
+            val successfulForwardsKey = "successful_forwards$statKeySuffix"
+            val failedForwardsKey = "failed_forwards$statKeySuffix"
+
+            putInt(totalForwardedKey, sharedPreferences.getInt(totalForwardedKey, 0) + 1)
             if (success) {
-                putInt("successful_forwards", sharedPreferences.getInt("successful_forwards", 0) + 1)
+                putInt(successfulForwardsKey, sharedPreferences.getInt(successfulForwardsKey, 0) + 1)
             } else {
-                putInt("failed_forwards", sharedPreferences.getInt("failed_forwards", 0) + 1)
+                putInt(failedForwardsKey, sharedPreferences.getInt(failedForwardsKey, 0) + 1)
 
                 val errorsToLog = listOfNotNull(recipientError, networkError)
                 if (errorsToLog.isNotEmpty()) {
                     val currentLogs = sharedPreferences.getStringSet("error_logs", mutableSetOf()) ?: mutableSetOf()
                     val newLogs = currentLogs.toMutableSet()
                     errorsToLog.forEach { error ->
-                        newLogs.add("${System.currentTimeMillis()}|$error")
+                        newLogs.add("${System.currentTimeMillis()}|[SIM ${simSlotName}] $error")
                     }
                     putStringSet("error_logs", newLogs)
                 }
@@ -162,7 +184,7 @@ class ForwardingService : Service() {
             val channel = NotificationChannel(
                 "sms_forwarder_channel",
                 applicationContext.getString(R.string.channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             )
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)

@@ -44,6 +44,13 @@
             android:name=".ForwardingService"
             android:foregroundServiceType="dataSync" />
 
+        <meta-data
+            android:name="pro.hornigan.smsforwarder.AUTHOR"
+            android:value="Dave Hornigan" />
+        <meta-data
+            android:name="pro.hornigan.smsforwarder.EMAIL"
+            android:value="dave@hornigan.pro" />
+
     </application>
 
 </manifest>
